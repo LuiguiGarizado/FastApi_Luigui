@@ -1,6 +1,10 @@
-from pydantic import BaseModel, field_validator
-
+from enum import Enum
 from sqlmodel import SQLModel, Field
+
+class ProductCategories(str, Enum):
+    MONITORES = "Monitores"
+    MOUSES = "Mouses"
+    KEYBOARD = "Keyboard"
 
 class Product(SQLModel, table=True):
     __tablename__ = "app_inv_products"
@@ -11,28 +15,16 @@ class Product(SQLModel, table=True):
     category: str
     quantity: int
 
-
-class CreateProduct(BaseModel):
-    name: str 
+class CreateProduct(SQLModel):
+    name: str
     price: float
+    category: ProductCategories
     quantity: int
-    category: str
 
-    @field_validator("category")
-    @classmethod
-    def normalize_category(cls, value: str):
-        return value.strip().capitalize()
-
-
-class UpdateProduct(BaseModel):
+class UpdateProduct(SQLModel):
     name: str | None = None
     price: float | None = None
+    category: ProductCategories | None = None
     quantity: int | None = None
-    category: str | None = None
 
-    @field_validator("category")
-    @classmethod
-    def normalize_category(cls, value: str | None):
-        if value is not None:
-            return value.strip().capitalize()
-        return value
+    

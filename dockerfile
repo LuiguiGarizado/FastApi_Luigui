@@ -1,42 +1,42 @@
 # ==========================================
 # 1. Builder stage (Construcción con uv)
 # ==========================================
-FROM ghcr.io/astral-sh/uv:python3.12-slim AS builder
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
-# Acelerar compilación de bytecode y deshabilitar enlaces duros en Docker
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
 
 WORKDIR /app
 
-# Instalar dependencias aprovechando la caché de Docker
 COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
-# Copiar el código del proyecto e instalarlo
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
-
 
 # ==========================================
 # 2. Stage Final (Imagen liviana para producción)
 # ==========================================
 FROM python:3.12-slim
 
+# Evitar .pyc en runtime, asegurar logs inmediatos y agregar el venv al PATH
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/app/.venv/bin:$PATH"
+
 WORKDIR /app
 
-# Copiar únicamente el entorno virtual (.venv) e instalaciones del builder
-COPY --from=builder /app/.venv /app/.venv
+# Crear un usuario y grupo sin privilegios por seguridad
+RUN addgroup --system appgroup && adduser --system --group appuser
 
-# Copiar el código fuente
-COPY . /app
+# Copiar el entorno virtual y el código asignando los permisos al nuevo usuario
+COPY --from=builder --chown=appuser:appgroup /app/.venv /app/.venv
+COPY --chown=appuser:appgroup . /app
 
-# Activar el entorno virtual en el PATH
-ENV PATH="/app/.venv/bin:$PATH"
+USER appuser
 
 EXPOSE 8000
 
-# Iniciar la aplicación con Uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

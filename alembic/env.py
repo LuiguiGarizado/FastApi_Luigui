@@ -7,7 +7,7 @@ from alembic import context
 from sqlmodel import SQLModel
 
 # Importar los modelos que se quieren migrar aqui
-from src.models.product_model import Product
+from src.models.product_model import Product, ImageRecord 
 
 import os
 from dotenv import load_dotenv

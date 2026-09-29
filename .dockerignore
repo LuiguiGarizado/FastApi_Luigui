@@ -3,17 +3,19 @@
 venv/
 ENV/
 
-# Variables de entorno y secretos
+# Variables de entorno y secretos (se inyectan con env_file en compose, no van en la imagen)
 .env
 .env.local
 
-# Caché de Python
+# Cache de Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Control de versiones / IDEs
+# Control de versiones / IDEs / OS
+.git/
+.gitignore
 .vscode/
 .idea/
 .DS_Store

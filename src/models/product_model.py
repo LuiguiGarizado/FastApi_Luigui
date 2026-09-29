@@ -27,4 +27,9 @@ class UpdateProduct(SQLModel):
     category: ProductCategories | None = None
     quantity: int | None = None
 
-    
+class ImageRecord(SQLModel, table=True):
+    __tablename__ = "images_s3"
+
+    id: int | None = Field(primary_key=True, default=None)
+    filename: str = Field(unique=True, index=True)
+    url: str = Field(nullable=False)

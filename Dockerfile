@@ -1,7 +1,8 @@
 # ==========================================
 # 1. Builder stage (Construcción con uv)
 # ==========================================
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+FROM python:3.12-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
@@ -12,31 +13,36 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
-COPY . /app
+COPY main.py ./main.py
+COPY src ./src
+COPY alembic.ini ./alembic.ini
+COPY alembic ./alembic
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 # ==========================================
-# 2. Stage Final (Imagen liviana para producción)
+# 2. Stage final (imagen liviana)
 # ==========================================
 FROM python:3.12-slim
 
-# Evitar .pyc en runtime, asegurar logs inmediatos y agregar el venv al PATH
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
-# Crear un usuario y grupo sin privilegios por seguridad
 RUN addgroup --system appgroup && adduser --system --group appuser
 
-# Copiar el entorno virtual y el código asignando los permisos al nuevo usuario
 COPY --from=builder --chown=appuser:appgroup /app/.venv /app/.venv
-COPY --chown=appuser:appgroup . /app
+COPY --chown=appuser:appgroup main.py ./main.py
+COPY --chown=appuser:appgroup src ./src
+COPY --chown=appuser:appgroup alembic.ini ./alembic.ini
+COPY --chown=appuser:appgroup alembic ./alembic
+COPY --chown=appuser:appgroup entrypoint.sh ./entrypoint.sh
 
 USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["sh", "./entrypoint.sh"]

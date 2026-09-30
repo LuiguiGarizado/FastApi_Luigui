@@ -2,6 +2,8 @@ services:
   db:
     image: postgres:16
     container_name: fastapi_db
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}

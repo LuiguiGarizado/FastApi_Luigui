@@ -7,5 +7,12 @@ wheels/
 *.egg-info
 
 # Virtual environments
-.venv
+.venv/
+venv/
+ENV/
+
+# Env / secretos - nunca subir a git
 .env
+.env.local
+*.pem
+*.key
